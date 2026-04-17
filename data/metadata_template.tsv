@@ -1,0 +1,15 @@
+# =============================================================================
+# 样本元数据模板 (metadata.tsv)
+# tab 分隔，第一列为样本 ID
+# 根据你的实验设计修改列名和值
+# =============================================================================
+
+sample-id	treatment	group	day
+sample_01	control	A	0
+sample_02	control	A	0
+sample_03	control	A	7
+sample_04	control	A	7
+sample_05	treated	B	0
+sample_06	treated	B	0
+sample_07	treated	B	7
+sample_08	treated	B	7

@@ -1,0 +1,36 @@
+# qiime2 artifacts - 体积大，不上传
+*.qza
+*.qzv
+
+# 结果文件
+results/
+logs/
+
+# 环境
+envs/gg_2024*.qza
+envs/*.yaml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.bak
+*~

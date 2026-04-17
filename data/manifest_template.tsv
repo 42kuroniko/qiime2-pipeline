@@ -1,0 +1,11 @@
+# =============================================================================
+# 样本清单模板 (manifest.tsv)
+# tab 分隔，三列: sample-id, forward-absolute-filepath, reverse-absolute-filepath
+# 路径必须是绝对路径！
+# =============================================================================
+
+sample-id	forward-absolute-filepath	reverse-absolute-filepath
+sample_01	/data/sample_01_L001_R1_001.fastq.gz	/data/sample_01_L001_R2_001.fastq.gz
+sample_02	/data/sample_02_L001_R1_001.fastq.gz	/data/sample_02_L001_R2_001.fastq.gz
+sample_03	/data/sample_03_L001_R1_001.fastq.gz	/data/sample_03_L001_R2_001.fastq.gz
+sample_04	/data/sample_04_L001_R1_001.fastq.gz	/data/sample_04_L001_R2_001.fastq.gz
