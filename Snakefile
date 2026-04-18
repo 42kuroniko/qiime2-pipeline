@@ -1,17 +1,17 @@
 # =============================================================================
 # qiime2-pipeline: Snakemake workflow for 16S amplicon analysis
-# From fastq → ASV → taxonomy → diversity → R-ready export
+# Study: PRJNA1309757 - Urothelial Carcinoma and Benign Bladder Tissue Microbiome
+# Author: Rong Wu
 # =============================================================================
 
 import os
 import glob
 
-# ---------------------------------------------------------------------------
-# 配置
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Config
+# -----------------------------------------------------------------------------
 configfile: "config.yaml"
 
-# 样本名（从 manifest 文件读取，排除注释行）
 SAMPLES = []
 with open(config["manifest"], "r") as f:
     for line in f:
@@ -25,15 +25,13 @@ with open(config["manifest"], "r") as f:
 if not SAMPLES:
     raise ValueError("No valid samples found in manifest. Check your manifest file and paths.")
 
-# 输出目录
 RESULTS = config.get("results_dir", "results")
 DATA = config.get("data_dir", "data")
 
-# ---------------------------------------------------------------------------
-# 工具函数
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
 def get_fastq_files(wildcards):
-    """根据 manifest 获取每个样本的双端 fastq 路径"""
     manifest_df = pd.read_csv(config["manifest"], sep="\t")
     row = manifest_df[manifest_df["sample-id"] == wildcards.sample]
     if row.empty:
@@ -42,13 +40,12 @@ def get_fastq_files(wildcards):
     reverse = row["reverse-absolute-filepath"].values[0]
     return {"r1": forward, "r2": reverse}
 
-# ---------------------------------------------------------------------------
-# 规则
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Rules
+# -----------------------------------------------------------------------------
 
 rule all:
     input:
-        # 最终输出文件
         expand(os.path.join(RESULTS, "tables", "{sample}-table.qza"), sample=SAMPLES),
         os.path.join(RESULTS, "tables", "merged-table.qza"),
         os.path.join(RESULTS, "tables", "rarefied-table.qza"),
@@ -62,7 +59,6 @@ rule all:
         os.path.join(RESULTS, "diversity", "jaccard_distance-matrix.qza"),
         expand(os.path.join(RESULTS, "diversity", "alpha", "{sample}-alpha.qza"), sample=SAMPLES),
         os.path.join(RESULTS, "diversity", "core-metrics-results"),
-        # R 导出
         os.path.join(RESULTS, "export", "feature-table.biom"),
         os.path.join(RESULTS, "export", "taxonomy.tsv"),
         os.path.join(RESULTS, "export", "tree.nwk"),
@@ -70,9 +66,9 @@ rule all:
         os.path.join(RESULTS, "export", "ASV-sequences.fasta"),
 
 
-# ---------------------------------------------------------------------------
-# 1. 导入 fastq 为 qza
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 1. Import fastq as qza
+# -----------------------------------------------------------------------------
 rule import_fastq:
     output:
         os.path.join(RESULTS, "imported", "{sample}-demux.qza")
@@ -91,9 +87,9 @@ rule import_fastq:
         """
 
 
-# ---------------------------------------------------------------------------
-# 2. 质量可视化
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 2. Quality summary
+# -----------------------------------------------------------------------------
 rule quality_summary:
     input:
         os.path.join(RESULTS, "imported", "{sample}-demux.qza")
@@ -110,9 +106,9 @@ rule quality_summary:
         """
 
 
-# ---------------------------------------------------------------------------
-# 3. DADA2 去噪（去引物、质控、去嵌合）
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 3. DADA2 denoise
+# -----------------------------------------------------------------------------
 rule dada2_denoise:
     output:
         table=os.path.join(RESULTS, "tables", "{sample}-table.qza"),
@@ -144,9 +140,9 @@ rule dada2_denoise:
         """
 
 
-# ---------------------------------------------------------------------------
-# 4. 合并所有样本的 ASV 表
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 4. Merge ASV tables
+# -----------------------------------------------------------------------------
 rule merge_tables:
     input:
         tables=expand(os.path.join(RESULTS, "tables", "{sample}-table.qza"), sample=SAMPLES)
@@ -163,9 +159,9 @@ rule merge_tables:
         """
 
 
-# ---------------------------------------------------------------------------
-# 5. 合并代表性序列
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 5. Merge representative sequences
+# -----------------------------------------------------------------------------
 rule merge_rep_seqs:
     input:
         seqs=expand(os.path.join(RESULTS, "rep_seqs", "{sample}-rep-seqs.qza"), sample=SAMPLES)
@@ -182,9 +178,9 @@ rule merge_rep_seqs:
         """
 
 
-# ---------------------------------------------------------------------------
-# 6. 稀有化（Rarefaction）- 用于多样性分析
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 6. Rarefaction
+# -----------------------------------------------------------------------------
 rule rarefy:
     input:
         os.path.join(RESULTS, "tables", "merged-table.qza")
@@ -204,9 +200,9 @@ rule rarefy:
         """
 
 
-# ---------------------------------------------------------------------------
-# 7. 物种注释（GreenGenenes2 Naive Bayes classifier）
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 7. Taxonomic classification (GreenGenes2)
+# -----------------------------------------------------------------------------
 rule classify_taxonomy:
     input:
         rep_seqs=os.path.join(RESULTS, "rep_seqs", "merged-rep-seqs.qza"),
@@ -242,9 +238,9 @@ rule export_taxonomy_tsv:
         """
 
 
-# ---------------------------------------------------------------------------
-# 8. 构建系统发育树
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 8. Phylogenetic tree
+# -----------------------------------------------------------------------------
 rule align_seqs:
     input:
         os.path.join(RESULTS, "rep_seqs", "merged-rep-seqs.qza")
@@ -299,9 +295,9 @@ rule build_tree:
         """
 
 
-# ---------------------------------------------------------------------------
-# 9. Alpha / Beta 多样性分析
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 9. Alpha / Beta diversity
+# -----------------------------------------------------------------------------
 rule diversity_core_metrics:
     input:
         table=os.path.join(RESULTS, "tables", "rarefied-table.qza"),
@@ -325,9 +321,9 @@ rule diversity_core_metrics:
         """
 
 
-# ---------------------------------------------------------------------------
-# 10. Alpha 多样性组间检验
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 10. Alpha group significance
+# -----------------------------------------------------------------------------
 rule alpha_group_significance:
     input:
         rarefied_table=os.path.join(RESULTS, "tables", "rarefied-table.qza"),
@@ -346,9 +342,9 @@ rule alpha_group_significance:
         """
 
 
-# ---------------------------------------------------------------------------
-# 11. Beta 多样性组间检验
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 11. Beta group significance
+# -----------------------------------------------------------------------------
 rule beta_group_significance:
     input:
         distance_matrix=os.path.join(RESULTS, "diversity", "core-metrics-results", "unweighted_unifrac_distance_matrix.qza"),
@@ -367,9 +363,9 @@ rule beta_group_significance:
         """
 
 
-# ---------------------------------------------------------------------------
-# 12. 导出为 R (phyloseq) 可用格式
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 12. Export for R (phyloseq)
+# -----------------------------------------------------------------------------
 rule export_for_r:
     input:
         table=os.path.join(RESULTS, "tables", "merged-table.qza"),
@@ -388,7 +384,6 @@ rule export_for_r:
         """
         mkdir -p {RESULTS}/export
 
-        # 导出 feature-table.biom
         qiime tools export \
             --input-path {input.table} \
             --output-path {RESULTS}/export
@@ -396,22 +391,18 @@ rule export_for_r:
         mv {RESULTS}/export/feature-table.biom {output[0]} 2>/dev/null || \
         mv {RESULTS}/export/feature-table/feature-table.biom {output[0]} 2>/dev/null || true
 
-        # 导出 taxonomy.tsv
         qiime tools export \
             --input-path {input.taxonomy} \
             --output-path {RESULTS}/export
         mv {RESULTS}/export/taxonomy.tsv {output[1]} 2>/dev/null || true
 
-        # 导出 tree.nwk
         qiime tools export \
             --input-path {input.tree} \
             --output-path {RESULTS}/export
         mv {RESULTS}/export/tree.nwk {output[2]} 2>/dev/null || true
 
-        # 复制 metadata 为 sam.tsv（R 中读作 sample_data）
         cp {input.metadata} {output[3]}
 
-        # 导出 ASV 序列 fasta
         qiime tools export \
             --input-path {RESULTS}/rep_seqs/merged-rep-seqs.qza \
             --output-path {RESULTS}/export
@@ -419,9 +410,9 @@ rule export_for_r:
         """
 
 
-# ---------------------------------------------------------------------------
-# 13. 生成流程报告
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 13. Workflow summary
+# -----------------------------------------------------------------------------
 rule workflow_summary:
     input:
         expand(os.path.join(RESULTS, "stats", "{sample}-dada2-stats.qza"), sample=SAMPLES)
@@ -436,14 +427,13 @@ rule workflow_summary:
             --o-visualization {output} \
             2> {log} || true
 
-        # 基本的统计报告
         echo "Pipeline completed successfully" > {output}
         """
 
 
-# ---------------------------------------------------------------------------
-# 清理规则（可选）
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Clean
+# -----------------------------------------------------------------------------
 rule clean:
     shell:
         """
