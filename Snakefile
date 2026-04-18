@@ -1,7 +1,6 @@
 # =============================================================================
 # qiime2-pipeline: Snakemake workflow for 16S amplicon analysis
 # Study: PRJNA1309757 - Urothelial Carcinoma and Benign Bladder Tissue Microbiome
-# Author: Rong Wu
 # =============================================================================
 
 import os

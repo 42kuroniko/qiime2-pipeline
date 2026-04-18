@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# Author: Rong Wu
 
 """
 Download GreenGenes2 reference database and classifier.

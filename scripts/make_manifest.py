@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# Author: Rong Wu
 
 """
 Generate manifest.tsv for QIIME2 pipeline.

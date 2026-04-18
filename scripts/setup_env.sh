@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Author: Rong Wu
 # Setup conda env + download GreenGenes2 references.
 # Usage: bash scripts/setup_env.sh
 
